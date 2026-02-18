@@ -3,12 +3,17 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Version](https://img.shields.io/badge/version-1.0.0-green.svg)
 
-**CliKy** is a modern, cross-platform clicker and macro tool built with Tauri and React. It features a sleek, transparent UI, powerful macro capabilities, and an in-game overlay for real-time status monitoring.
+**CliKy** is a modern, cross-platform clicker and macro tool built with Tauri and React. It is **specifically designed for Arc Raiders** to assist with advanced mechanics and duplication glitches.
+
+This tool features a sleek, transparent UI, powerful macro capabilities for "snap hook tech", and an in-game overlay for real-time status monitoring. It has been heavily tested, is **undetected**, and is currently considered safe to use (not bannable).
 
 ## Features
 
-- **High-Performance Clicking**: Optimized backend for low-latency click simulation.
-- **Advanced Macros**: Record and replay complex mouse and keyboard sequences.
+- **Inhuman Click Speed**: Optimized for "Kettle" and "Burletta" usage, clicking significantly faster than humanly possible.
+- **Snap Hook Automation**: Dedicated macro split into two seamless parts:
+    1.  Instantly moves your snap hook from **Safe Pocket** to **Quick Use**.
+    2.  Moves it back to **Safe Pocket** just as fast.
+    - All actions are performed in **less than a second**—making complex tech effortless (just aim and shoot).
 - **Overlay Mode**: Always-on-top overlay to monitor status and CPS while in-game.
 - **Modern UI**: Beautiful, transparent interface built with React and Tailwind CSS.
 - **Cross-Platform**: Runs on Windows, macOS, and Linux (tested primarily on Windows).
@@ -25,7 +30,7 @@ Before getting started, ensure you have the following installed:
 
 1.  **Clone the repository**:
     ```bash
-    git clone https://github.com/motas/cliky.git
+    git clone https://github.com/jynxzio5/cliky.git
     cd cliky
     ```
 

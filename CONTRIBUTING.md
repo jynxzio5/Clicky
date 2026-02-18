@@ -27,7 +27,7 @@ Thank you for your interest in contributing to CliKy! We welcome contributions f
 
 ## Reporting Issues
 
-If you find a bug or have a feature request, please [open an issue](https://github.com/motas/cliky/issues) on GitHub.
+If you find a bug or have a feature request, please [open an issue](https://github.com/jynxzio5/cliky/issues) on GitHub.
 
 ## Coding Standards
 

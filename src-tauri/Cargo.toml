@@ -2,9 +2,9 @@
 name = "cliky"
 version = "1.0.0"
 description = "A modern, cross-platform clicker and macro tool built with Tauri and React."
-authors = ["Motas"]
+authors = ["jynxzio5"]
 license = "MIT"
-repository = "https://github.com/motas/cliky"
+repository = "https://github.com/jynxzio5/cliky"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

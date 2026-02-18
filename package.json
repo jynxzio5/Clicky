@@ -3,11 +3,11 @@
   "private": false,
   "version": "1.0.0",
   "description": "A modern, cross-platform clicker and macro tool built with Tauri and React.",
-  "author": "Motas",
+  "author": "jynxzio5",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/motas/cliky.git"
+    "url": "git+https://github.com/jynxzio5/cliky.git"
   },
   "type": "module",
   "scripts": {
