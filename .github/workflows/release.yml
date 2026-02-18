@@ -4,7 +4,7 @@ on:
     types: [created]
 
 jobs:
-  publish-tauri:
+  release:
     permissions:
       contents: write
     runs-on: windows-latest
@@ -22,13 +22,12 @@ jobs:
       - name: install frontend dependencies
         run: npm install
 
-      - uses: tauri-apps/tauri-action@v0
+      - name: build tauri
+        run: npm run tauri build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: upload release asset
+        uses: softprops/action-gh-release@v1
         with:
-          tagName: ${{ github.event.release.tag_name }}
-          releaseName: 'CliKy ${{ github.event.release.tag_name }}'
-          releaseBody: 'See the assets to download this version.'
-          releaseDraft: false
-          prerelease: false
-          args: --target x86_64-pc-windows-msvc
+          files: src-tauri/target/release/CliKy.exe
