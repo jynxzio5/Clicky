@@ -1,6 +1,6 @@
 [package]
 name = "cliky"
-version = "1.0.0"
+version = "1.0.1"
 description = "A modern, cross-platform clicker and macro tool built with Tauri and React."
 authors = ["jynxzio5"]
 license = "MIT"

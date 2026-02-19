@@ -1,7 +1,7 @@
 # CliKy
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-1.0.0-green.svg)
+![Version](https://img.shields.io/badge/version-1.0.1-green.svg)
 
 **CliKy** is a modern, cross-platform clicker and macro tool built with Tauri and React. It is **specifically designed for Arc Raiders** to assist with advanced mechanics and duplication glitches.
 

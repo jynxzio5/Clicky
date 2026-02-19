@@ -443,7 +443,7 @@ dependencies = [
 
 [[package]]
 name = "cliky"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "device_query",
  "rand 0.8.5",

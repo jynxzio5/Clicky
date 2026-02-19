@@ -23,7 +23,7 @@ const SettingsPage: React.FC = () => {
     const [updateStatus, setUpdateStatus] = React.useState<'idle' | 'checking' | 'available' | 'uptodate' | 'error'>('idle');
     const [latestVersion, setLatestVersion] = React.useState<string>('');
     const [downloadUrl, setDownloadUrl] = React.useState<string>('');
-    const CURRENT_VERSION = "1.0.0";
+    const CURRENT_VERSION = "1.0.1";
 
     const checkUpdate = async () => {
         setUpdateStatus('checking');

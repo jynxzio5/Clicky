@@ -28,7 +28,7 @@ const Sidebar = ({ activePage, setPage }: SidebarProps) => {
                         CliKy
                     </h1>
                     <p className="text-xs text-zinc-500 font-medium tracking-wide">
-                        v1.0.0
+                        v1.0.1
                     </p>
                 </div>
             </div>
