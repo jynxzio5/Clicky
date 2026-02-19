@@ -1,7 +1,8 @@
-import { MousePointer2, Keyboard, Bolt, Activity } from "lucide-react";
+import { MousePointer2, Keyboard, Home, Bolt } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
+import logo from "../assets/logo.png";
 
-type Page = "clicker" | "macro" | "settings";
+export type Page = "home" | "clicker" | "macro" | "settings";
 
 interface SidebarProps {
     activePage: Page;
@@ -10,6 +11,7 @@ interface SidebarProps {
 
 const Sidebar = ({ activePage, setPage }: SidebarProps) => {
     const navItems = [
+        { id: "home", icon: Home, label: "Home" },
         { id: "clicker", icon: MousePointer2, label: "Auto Clicker" },
         { id: "macro", icon: Keyboard, label: "Macros" },
         { id: "settings", icon: Bolt, label: "Settings" },
@@ -18,8 +20,8 @@ const Sidebar = ({ activePage, setPage }: SidebarProps) => {
     return (
         <div className="w-64 h-full bg-zinc-950/50 backdrop-blur-xl border-r border-zinc-800/50 flex flex-col p-4 relative z-50 pointer-events-auto">
             <div className="flex items-center gap-3 px-2 mb-8 mt-2">
-                <div className="w-8 h-8 rounded-xl bg-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                    <Activity className="w-5 h-5 text-white" />
+                <div className="w-8 h-8 rounded-xl bg-indigo-500/0 flex items-center justify-center">
+                    <img src={logo} alt="Clicky Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
                 </div>
                 <div>
                     <h1 className="text-xl font-bold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
@@ -42,9 +44,9 @@ const Sidebar = ({ activePage, setPage }: SidebarProps) => {
                         <button
                             key={item.id}
                             onClick={() => setPage(item.id as Page)}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${isActive
-                                    ? "bg-indigo-500/10 text-indigo-400"
-                                    : "text-zinc-400 hover:bg-zinc-900/50 hover:text-indigo-300"
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer ${isActive
+                                ? "bg-indigo-500/10 text-indigo-400"
+                                : "text-zinc-400 hover:bg-zinc-900/50 hover:text-indigo-300"
                                 }`}
                         >
                             <Icon

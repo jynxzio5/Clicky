@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Crosshair, Keyboard, Settings2, Zap } from 'lucide-react';
+import { Crosshair, Keyboard, Settings2 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -7,6 +7,18 @@ import { twMerge } from 'tailwind-merge';
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
+
+const Card = ({ title, icon: Icon, children, className }: { title: string, icon: any, children: React.ReactNode, className?: string }) => (
+    <div className={cn("bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-2xl p-4 shadow-sm transition-all hover:border-zinc-700/50", className)}>
+        <div className="flex items-center gap-2 mb-3 text-zinc-400">
+            <div className="p-1.5 rounded-lg bg-zinc-800/50">
+                <Icon className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wider">{title}</span>
+        </div>
+        {children}
+    </div>
+);
 
 type CapturingTarget = 'safe_pocket' | 'quick_use' | null;
 
@@ -49,28 +61,22 @@ const Macro: React.FC = () => {
         }).catch(console.error);
     }, [part1Key, part2Key, dodgeKey, safePocketPos, quickUsePos, delayMs]);
 
-    // Key recording handler
     const handleKeyRecord = useCallback((target: 'p1' | 'p2' | 'dodge') => {
         setRecordingKey(target);
-
         const setKey = target === 'p1' ? setPart1Key : target === 'p2' ? setPart2Key : setDodgeKey;
-
         const cleanup = () => {
             window.removeEventListener('keyup', keyUpHandler);
             window.removeEventListener('keydown', keyDownHandler);
             window.removeEventListener('mouseup', mouseUpHandler);
             window.removeEventListener('mousedown', mouseDownHandler);
         };
-
         const keyUpHandler = (e: KeyboardEvent) => {
             e.preventDefault();
             setKey(e.code);
             setRecordingKey(null);
             cleanup();
         };
-
         const keyDownHandler = (e: KeyboardEvent) => { e.preventDefault(); };
-
         const mouseUpHandler = (e: MouseEvent) => {
             e.preventDefault();
             let key = "";
@@ -86,18 +92,13 @@ const Macro: React.FC = () => {
                 cleanup();
             }
         };
-
-        const mouseDownHandler = (e: MouseEvent) => {
-            if (e.button > 2) e.preventDefault();
-        };
-
+        const mouseDownHandler = (e: MouseEvent) => { if (e.button > 2) e.preventDefault(); };
         window.addEventListener('keyup', keyUpHandler);
         window.addEventListener('keydown', keyDownHandler);
         window.addEventListener('mouseup', mouseUpHandler);
         window.addEventListener('mousedown', mouseDownHandler);
     }, []);
 
-    // Coordinate capture — waits for any key press globally, then grabs cursor position
     const startCapture = useCallback(async (target: CapturingTarget) => {
         if (capturing || !target) return;
         setCapturing(target);
@@ -117,216 +118,145 @@ const Macro: React.FC = () => {
     const positionsSet = safePocketPos.x !== 0 && safePocketPos.y !== 0 && quickUsePos.x !== 0 && quickUsePos.y !== 0;
 
     return (
-        <div className="h-screen w-screen font-sans select-none overflow-hidden" data-tauri-drag-region>
-            <div className="w-full h-full bg-[#0a0a0a]/90 backdrop-blur-md flex flex-col pointer-events-auto">
-
-                {/* Spacer for TitleBar */}
-                <div className="h-10 border-b border-zinc-800/50" />
-
-                {/* Content */}
-                <div className="flex-1 p-4 space-y-4 overflow-y-auto no-scrollbar">
-
-                    {/* Section: MACRO KEYBINDS */}
-                    <div className="bg-zinc-900/20 border border-zinc-800/50 p-4 space-y-3">
-                        <div className="flex items-center space-x-2 text-zinc-400 border-b border-zinc-800 pb-2">
-                            <Keyboard className="w-4 h-4" />
-                            <span className="text-xs font-bold uppercase tracking-wider">Macro Keybinds</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full content-start">
+            {/* Bindings Card */}
+            <Card title="Macro Keybinds" icon={Keyboard} className="md:col-span-2">
+                <div className="space-y-4">
+                    {/* Part 1 */}
+                    <div className="flex items-center justify-between p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/30">
+                        <div>
+                            <span className="text-sm font-bold text-zinc-200">Part 1</span>
+                            <div className="text-[10px] text-zinc-500 font-mono mt-0.5">Inv: Safe → Quick</div>
                         </div>
-
-                        {/* Part 1 Key */}
-                        <div className="flex items-center justify-between px-1">
-                            <div>
-                                <span className="text-sm text-zinc-300 font-mono">Part 1</span>
-                                <span className="text-[9px] text-zinc-600 ml-2">Safe → Quick</span>
-                            </div>
-                            <button
-                                onClick={() => handleKeyRecord('p1')}
-                                className={cn(
-                                    "px-3 py-1.5 text-xs font-mono border rounded transition-all min-w-[90px] text-center",
-                                    recordingKey === 'p1'
-                                        ? "bg-yellow-500/20 border-yellow-500 text-yellow-500 animate-pulse"
-                                        : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-500"
-                                )}
-                            >
-                                {recordingKey === 'p1' ? "PRESS..." : part1Key}
-                            </button>
-                        </div>
-
-                        {/* Part 2 Key */}
-                        <div className="flex items-center justify-between px-1">
-                            <div>
-                                <span className="text-sm text-zinc-300 font-mono">Part 2</span>
-                                <span className="text-[9px] text-zinc-600 ml-2">Quick → Safe</span>
-                            </div>
-                            <button
-                                onClick={() => handleKeyRecord('p2')}
-                                className={cn(
-                                    "px-3 py-1.5 text-xs font-mono border rounded transition-all min-w-[90px] text-center",
-                                    recordingKey === 'p2'
-                                        ? "bg-yellow-500/20 border-yellow-500 text-yellow-500 animate-pulse"
-                                        : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-500"
-                                )}
-                            >
-                                {recordingKey === 'p2' ? "PRESS..." : part2Key}
-                            </button>
-                        </div>
-
-                        {/* Dodge Roll Key */}
-                        <div className="flex items-center justify-between px-1">
-                            <div>
-                                <span className="text-sm text-zinc-300 font-mono">Dodge Roll</span>
-                                <span className="text-[9px] text-zinc-600 ml-2">For Part 2</span>
-                            </div>
-                            <button
-                                onClick={() => handleKeyRecord('dodge')}
-                                className={cn(
-                                    "px-3 py-1.5 text-xs font-mono border rounded transition-all min-w-[90px] text-center",
-                                    recordingKey === 'dodge'
-                                        ? "bg-yellow-500/20 border-yellow-500 text-yellow-500 animate-pulse"
-                                        : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-500"
-                                )}
-                            >
-                                {recordingKey === 'dodge' ? "PRESS..." : dodgeKey}
-                            </button>
-                        </div>
+                        <button
+                            onClick={() => handleKeyRecord('p1')}
+                            className={cn(
+                                "px-4 py-2 text-xs font-bold font-mono border rounded-lg transition-all min-w-[100px]",
+                                recordingKey === 'p1' ? "bg-indigo-500/20 border-indigo-500 text-indigo-400 animate-pulse" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-200"
+                            )}
+                        >
+                            {recordingKey === 'p1' ? "PRESS..." : part1Key}
+                        </button>
                     </div>
 
-                    {/* Section: POSITIONS */}
-                    <div className="bg-zinc-900/20 border border-zinc-800/50 p-4 space-y-3">
-                        <div className="flex items-center space-x-2 text-zinc-400 border-b border-zinc-800 pb-2">
-                            <Crosshair className="w-4 h-4" />
-                            <span className="text-xs font-bold uppercase tracking-wider">Positions</span>
+                    {/* Part 2 */}
+                    <div className="flex items-center justify-between p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/30">
+                        <div>
+                            <span className="text-sm font-bold text-zinc-200">Part 2</span>
+                            <div className="text-[10px] text-zinc-500 font-mono mt-0.5">Inv: Quick → Safe</div>
                         </div>
-
-                        {/* Safe Pocket Position */}
-                        <div className="px-1 space-y-1.5">
-                            <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">Safe Pocket</span>
-                            <div className="flex items-center space-x-2">
-                                <div className="flex items-center space-x-1 flex-1">
-                                    <span className="text-[10px] text-zinc-600 font-mono w-3">X</span>
-                                    <input
-                                        type="number"
-                                        value={safePocketPos.x}
-                                        onChange={(e) => setSafePocketPos({ ...safePocketPos, x: parseInt(e.target.value) || 0 })}
-                                        className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs font-mono text-zinc-300 focus:border-yellow-500 focus:outline-none"
-                                    />
-                                </div>
-                                <div className="flex items-center space-x-1 flex-1">
-                                    <span className="text-[10px] text-zinc-600 font-mono w-3">Y</span>
-                                    <input
-                                        type="number"
-                                        value={safePocketPos.y}
-                                        onChange={(e) => setSafePocketPos({ ...safePocketPos, y: parseInt(e.target.value) || 0 })}
-                                        className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs font-mono text-zinc-300 focus:border-yellow-500 focus:outline-none"
-                                    />
-                                </div>
-                                <button
-                                    onClick={() => startCapture('safe_pocket')}
-                                    disabled={capturing !== null}
-                                    className={cn(
-                                        "px-2 py-1 text-[10px] font-mono border rounded transition-all whitespace-nowrap",
-                                        capturing === 'safe_pocket'
-                                            ? "bg-yellow-500/20 border-yellow-500 text-yellow-500 animate-pulse"
-                                            : "bg-zinc-800 border-zinc-700 text-zinc-500 hover:text-yellow-500 hover:border-yellow-500/50 disabled:opacity-30"
-                                    )}
-                                >
-                                    {capturing === 'safe_pocket' ? 'PRESS KEY...' : '📍 Capture'}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Quick Use Position */}
-                        <div className="px-1 space-y-1.5">
-                            <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">Quick Use Slot</span>
-                            <div className="flex items-center space-x-2">
-                                <div className="flex items-center space-x-1 flex-1">
-                                    <span className="text-[10px] text-zinc-600 font-mono w-3">X</span>
-                                    <input
-                                        type="number"
-                                        value={quickUsePos.x}
-                                        onChange={(e) => setQuickUsePos({ ...quickUsePos, x: parseInt(e.target.value) || 0 })}
-                                        className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs font-mono text-zinc-300 focus:border-yellow-500 focus:outline-none"
-                                    />
-                                </div>
-                                <div className="flex items-center space-x-1 flex-1">
-                                    <span className="text-[10px] text-zinc-600 font-mono w-3">Y</span>
-                                    <input
-                                        type="number"
-                                        value={quickUsePos.y}
-                                        onChange={(e) => setQuickUsePos({ ...quickUsePos, y: parseInt(e.target.value) || 0 })}
-                                        className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs font-mono text-zinc-300 focus:border-yellow-500 focus:outline-none"
-                                    />
-                                </div>
-                                <button
-                                    onClick={() => startCapture('quick_use')}
-                                    disabled={capturing !== null}
-                                    className={cn(
-                                        "px-2 py-1 text-[10px] font-mono border rounded transition-all whitespace-nowrap",
-                                        capturing === 'quick_use'
-                                            ? "bg-yellow-500/20 border-yellow-500 text-yellow-500 animate-pulse"
-                                            : "bg-zinc-800 border-zinc-700 text-zinc-500 hover:text-yellow-500 hover:border-yellow-500/50 disabled:opacity-30"
-                                    )}
-                                >
-                                    {capturing === 'quick_use' ? 'PRESS KEY...' : '📍 Capture'}
-                                </button>
-                            </div>
-                        </div>
+                        <button
+                            onClick={() => handleKeyRecord('p2')}
+                            className={cn(
+                                "px-4 py-2 text-xs font-bold font-mono border rounded-lg transition-all min-w-[100px]",
+                                recordingKey === 'p2' ? "bg-indigo-500/20 border-indigo-500 text-indigo-400 animate-pulse" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-200"
+                            )}
+                        >
+                            {recordingKey === 'p2' ? "PRESS..." : part2Key}
+                        </button>
                     </div>
 
-                    {/* Section: SETTINGS */}
-                    <div className="bg-zinc-900/20 border border-zinc-800/50 p-4 space-y-3">
-                        <div className="flex items-center space-x-2 text-zinc-400 border-b border-zinc-800 pb-2">
-                            <Settings2 className="w-4 h-4" />
-                            <span className="text-xs font-bold uppercase tracking-wider">Settings</span>
+                    {/* Dodge */}
+                    <div className="flex items-center justify-between p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/30">
+                        <div>
+                            <span className="text-sm font-bold text-zinc-200">Dodge Roll</span>
+                            <div className="text-[10px] text-zinc-500 font-mono mt-0.5">Animation Cancel</div>
                         </div>
-                        <div className="px-1 space-y-1">
-                            <div className="flex justify-between text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">
-                                <span>Step Delay</span>
-                                <span className="text-yellow-500">{delayMs}ms</span>
-                            </div>
-                            <input
-                                type="range"
-                                min={0}
-                                max={500}
-                                step={10}
-                                value={delayMs}
-                                onChange={(e) => setDelayMs(parseInt(e.target.value))}
-                                className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-yellow-500 hover:accent-yellow-400"
+                        <button
+                            onClick={() => handleKeyRecord('dodge')}
+                            className={cn(
+                                "px-4 py-2 text-xs font-bold font-mono border rounded-lg transition-all min-w-[100px]",
+                                recordingKey === 'dodge' ? "bg-indigo-500/20 border-indigo-500 text-indigo-400 animate-pulse" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-200"
+                            )}
+                        >
+                            {recordingKey === 'dodge' ? "PRESS..." : dodgeKey}
+                        </button>
+                    </div>
+                </div>
+            </Card>
+
+            {/* Positions Card */}
+            <Card title="Coordinates" icon={Crosshair}>
+                <div className="space-y-4">
+                    {/* Safe Pocket */}
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                            <span>Safe Pocket</span>
+                            <span className="text-zinc-600 font-mono">X:{safePocketPos.x} Y:{safePocketPos.y}</span>
+                        </div>
+                        <button
+                            onClick={() => startCapture('safe_pocket')}
+                            disabled={capturing !== null}
+                            className={cn(
+                                "w-full py-2.5 text-xs font-bold rounded-lg transition-all border",
+                                capturing === 'safe_pocket'
+                                    ? "bg-indigo-500/10 border-indigo-500/50 text-indigo-400 animate-pulse"
+                                    : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
+                            )}
+                        >
+                            {capturing === 'safe_pocket' ? 'PRESS ANY KEY TO CAPTURE...' : 'Set Coordinate'}
+                        </button>
+                    </div>
+
+                    {/* Quick Use */}
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                            <span>Quick Use Slot</span>
+                            <span className="text-zinc-600 font-mono">X:{quickUsePos.x} Y:{quickUsePos.y}</span>
+                        </div>
+                        <button
+                            onClick={() => startCapture('quick_use')}
+                            disabled={capturing !== null}
+                            className={cn(
+                                "w-full py-2.5 text-xs font-bold rounded-lg transition-all border",
+                                capturing === 'quick_use'
+                                    ? "bg-indigo-500/10 border-indigo-500/50 text-indigo-400 animate-pulse"
+                                    : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
+                            )}
+                        >
+                            {capturing === 'quick_use' ? 'PRESS ANY KEY TO CAPTURE...' : 'Set Coordinate'}
+                        </button>
+                    </div>
+                </div>
+            </Card>
+
+            {/* Config Card */}
+            <Card title="Configuration" icon={Settings2}>
+                <div className="space-y-6">
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm font-bold text-zinc-400">Step Delay</span>
+                            <span className="bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded text-xs font-bold font-mono">
+                                {delayMs}ms
+                            </span>
+                        </div>
+                        <input
+                            type="range"
+                            min={0}
+                            max={500}
+                            step={10}
+                            value={delayMs}
+                            onChange={(e) => setDelayMs(parseInt(e.target.value))}
+                            className="w-full h-2 bg-zinc-800 rounded-full appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400 transition-all"
+                        />
+                    </div>
+
+                    <div className="pt-4 border-t border-zinc-800/50">
+                        <div className="flex items-center justify-between py-2">
+                            <span className="text-sm font-bold text-zinc-400">Macro Ready</span>
+                            <div className={cn("w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)] transition-all",
+                                positionsSet ? "bg-emerald-500 shadow-emerald-500/20" : "bg-red-500/50")}
                             />
                         </div>
-                    </div>
-
-                    {/* Section: STATUS */}
-                    <div className="bg-zinc-900/20 border border-zinc-800/50 p-4">
-                        <div className="flex items-center space-x-2 text-zinc-400 border-b border-zinc-800 pb-2 mb-2">
-                            <Zap className="w-4 h-4" />
-                            <span className="text-xs font-bold uppercase tracking-wider">Status</span>
-                        </div>
-                        <div className="grid grid-cols-1 gap-2 px-1">
-                            <div className="flex items-center justify-between py-1">
-                                <span className={cn("text-sm font-mono", positionsSet ? "text-white" : "text-zinc-500")}>Positions Configured</span>
-                                <div className={cn("w-3 h-3 rounded-sm border", positionsSet
-                                    ? "bg-yellow-500 border-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]"
-                                    : "bg-transparent border-zinc-700"
-                                )} />
-                            </div>
-                            <div className="flex items-center justify-between py-1">
-                                <span className={cn("text-sm font-mono", positionsSet ? "text-white" : "text-zinc-500")}>Macro Ready</span>
-                                <div className={cn("w-3 h-3 rounded-sm border", positionsSet
-                                    ? "bg-yellow-500 border-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]"
-                                    : "bg-transparent border-zinc-700"
-                                )} />
-                            </div>
+                        <div className="flex items-center justify-between py-2">
+                            <span className="text-sm font-bold text-zinc-400">Status</span>
+                            <span className={cn("text-xs font-bold tracking-wider uppercase", positionsSet ? "text-emerald-500" : "text-amber-500")}>
+                                {positionsSet ? "OPERATIONAL" : "NEEDS CONFIG"}
+                            </span>
                         </div>
                     </div>
                 </div>
-
-                {/* Footer */}
-                <div className="h-8 border-t border-zinc-800 bg-zinc-900/80 flex items-center justify-between px-4 text-[10px] text-zinc-600 font-mono">
-                    <span>BUILD: 2026.02.16</span>
-                    <span>MACRO MODULE</span>
-                </div>
-            </div>
+            </Card>
         </div>
     );
 };

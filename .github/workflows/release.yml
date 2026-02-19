@@ -30,4 +30,6 @@ jobs:
       - name: upload release asset
         uses: softprops/action-gh-release@v1
         with:
-          files: src-tauri/target/release/CliKy.exe
+          files: |
+            src-tauri/target/release/CliKy.exe
+            src-tauri/target/x86_64-pc-windows-msvc/release/CliKy.exe

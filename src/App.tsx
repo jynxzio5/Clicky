@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
+import { Page as SidebarPage } from "./components/Sidebar";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import Background from "./components/Background";
 import Controls from "./components/Controls";
 import Macro from "./components/Macro";
 import TitleBar from "./components/TitleBar";
 import Overlay from "./components/Overlay";
+import Layout from "./components/Layout";
+import ClickerConfig from "./components/ClickerConfig";
+import SettingsPage from "./components/SettingsPage";
 import "./index.css";
 
-type Page = "clicker" | "macro";
+
 
 function App() {
   const [isOverlay, setIsOverlay] = useState(false);
-  const [page, setPage] = useState<Page>("clicker");
+  const [page, setPage] = useState<SidebarPage>("home");
 
   useEffect(() => {
     const label = getCurrentWindow().label;
@@ -47,11 +50,15 @@ function App() {
   }
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden selection:bg-yellow-500/30">
-      <Background />
-      <TitleBar page={page} setPage={setPage} />
-      {page === "clicker" ? <Controls /> : <Macro />}
-    </div>
+    <>
+      <TitleBar />
+      <Layout activePage={page} setPage={setPage}>
+        {page === "home" && <Controls />}
+        {page === "clicker" && <ClickerConfig />}
+        {page === "macro" && <Macro />}
+        {page === "settings" && <SettingsPage />}
+      </Layout>
+    </>
   );
 }
 

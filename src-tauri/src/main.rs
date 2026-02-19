@@ -6,7 +6,9 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-use tauri::{Emitter, Manager, State};
+use std::fs;
+use std::path::PathBuf;
+use tauri::{Emitter, Manager, State, AppHandle};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, INPUT_MOUSE, KEYBDINPUT, KEYBD_EVENT_FLAGS,
     KEYEVENTF_KEYUP, MOUSEEVENTF_ABSOLUTE, MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP,
@@ -15,13 +17,13 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
 };
 use windows::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_CXSCREEN, SM_CYSCREEN};
 use rand::Rng;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════════════════
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 struct ClickerState {
     running: bool,
     cps: u64,
@@ -31,7 +33,7 @@ struct ClickerState {
     click_mode: String,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct MacroConfig {
     part1_key: String,
@@ -42,6 +44,30 @@ struct MacroConfig {
     quick_use_x: i32,
     quick_use_y: i32,
     delay_ms: u64,
+}
+
+#[derive(Serialize, Deserialize)]
+struct PersistentConfig {
+    clicker: ClickerState,
+    macro_config: MacroConfig,
+}
+
+fn get_config_path(app: &AppHandle) -> PathBuf {
+    app.path().app_config_dir().unwrap().join("settings.json")
+}
+
+fn save_config(app: &AppHandle, clicker: &ClickerState, macro_config: &MacroConfig) {
+    let cfg = PersistentConfig {
+        clicker: clicker.clone(),
+        macro_config: macro_config.clone(),
+    };
+    if let Ok(json) = serde_json::to_string_pretty(&cfg) {
+        let path = get_config_path(app);
+        if let Some(parent) = path.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
+        let _ = fs::write(path, json);
+    }
 }
 
 struct AppState {
@@ -471,6 +497,7 @@ fn toggle_clicker(state: State<AppState>) -> bool {
 fn update_config(
     cps: u64, randomness: u64, humanization_enabled: bool,
     toggle_key: String, click_mode: String, state: State<AppState>,
+    app: AppHandle,
 ) {
     let mut clicker = state.clicker.lock().unwrap();
     clicker.cps = cps;
@@ -478,9 +505,14 @@ fn update_config(
     clicker.humanization_enabled = humanization_enabled;
     clicker.toggle_key = toggle_key;
     clicker.click_mode = click_mode;
+    
+    // Save
+    let macro_config = state.macro_config.lock().unwrap();
+    save_config(&app, &*clicker, &*macro_config);
+
     println!(
         "Config updated: CPS={}, Rnd={}, Human={}, Key={}, Mode={}",
-        cps, randomness, humanization_enabled, &clicker.toggle_key, &clicker.click_mode
+        clicker.cps, clicker.randomness, clicker.humanization_enabled, &clicker.toggle_key, &clicker.click_mode
     );
 }
 
@@ -524,6 +556,7 @@ fn update_macro_config(
     safe_pocket_x: i32, safe_pocket_y: i32,
     quick_use_x: i32, quick_use_y: i32,
     delay_ms: u64, state: State<AppState>,
+    app: AppHandle,
 ) {
     let mut mc = state.macro_config.lock().unwrap();
     mc.part1_key = part1_key;
@@ -534,6 +567,11 @@ fn update_macro_config(
     mc.quick_use_x = quick_use_x;
     mc.quick_use_y = quick_use_y;
     mc.delay_ms = delay_ms;
+
+    // Save
+    let clicker = state.clicker.lock().unwrap();
+    save_config(&app, &*clicker, &*mc);
+
     println!(
         "Macro config: P1={}, P2={}, Dodge={}, SP=({},{}), QU=({},{}), Delay={}",
         mc.part1_key, mc.part2_key, mc.dodge_key,
@@ -594,6 +632,37 @@ fn main() {
             let main_window = app.get_webview_window("main").unwrap();
             let overlay_window = app.get_webview_window("overlay").unwrap();
             let app_handle = app.handle().clone();
+
+            // Load Config
+            let config_path = get_config_path(&app_handle);
+            if config_path.exists() {
+                if let Ok(content) = fs::read_to_string(&config_path) {
+                    if let Ok(cfg) = serde_json::from_str::<PersistentConfig>(&content) {
+                        println!("Loaded config from disk.");
+                        let mut c = clicker_clone.lock().unwrap();
+                        let mut m = macro_clone.lock().unwrap();
+                        
+                        // Restore Clicker State (but keep running=false safely)
+                        c.cps = cfg.clicker.cps;
+                        c.randomness = cfg.clicker.randomness;
+                        c.humanization_enabled = cfg.clicker.humanization_enabled;
+                        c.toggle_key = cfg.clicker.toggle_key;
+                        c.click_mode = cfg.clicker.click_mode;
+                        // Avoid auto-starting on load
+                        c.running = false; 
+
+                        // Restore Macro Config
+                        m.part1_key = cfg.macro_config.part1_key;
+                        m.part2_key = cfg.macro_config.part2_key;
+                        m.dodge_key = cfg.macro_config.dodge_key;
+                        m.safe_pocket_x = cfg.macro_config.safe_pocket_x;
+                        m.safe_pocket_y = cfg.macro_config.safe_pocket_y;
+                        m.quick_use_x = cfg.macro_config.quick_use_x;
+                        m.quick_use_y = cfg.macro_config.quick_use_y;
+                        m.delay_ms = cfg.macro_config.delay_ms;
+                    }
+                }
+            }
 
             // ─── THREAD 1: Input Listener ───────────────────────────────
             let input_clicker = clicker_clone.clone();

@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { LogicalPosition } from '@tauri-apps/api/dpi';
+import { Activity, Power } from 'lucide-react';
 
 const OVERLAY_POS_KEY = 'cliky_overlay_pos';
 
@@ -15,11 +16,8 @@ const Overlay: React.FC = () => {
     // Load saved position and set up event listener
     useEffect(() => {
         const win = getCurrentWindow();
-
-        // Set click-through by default
         win.setIgnoreCursorEvents(true).catch(console.error);
 
-        // Restore saved position
         const saved = localStorage.getItem(OVERLAY_POS_KEY);
         if (saved) {
             try {
@@ -28,7 +26,6 @@ const Overlay: React.FC = () => {
             } catch (_e) { /* ignore */ }
         }
 
-        // Listen for state changes from backend (replaces polling)
         const unlisten = listen<{ running: boolean; cps: number; click_mode: string }>(
             'clicker-state-changed',
             (event) => {
@@ -37,7 +34,6 @@ const Overlay: React.FC = () => {
             }
         );
 
-        // Initial state fetch
         invoke<[boolean, number, number, boolean, string, string]>('get_clicker_state')
             .then(([running, currentCps]) => {
                 setIsRunning(running);
@@ -50,13 +46,13 @@ const Overlay: React.FC = () => {
         };
     }, []);
 
-    // Drag handlers — enable interaction on the drag handle area
-    const handleDragHandleEnter = useCallback(() => {
+    // Drag handlers
+    const handleMouseEnter = useCallback(() => {
         const win = getCurrentWindow();
         win.setIgnoreCursorEvents(false).catch(console.error);
     }, []);
 
-    const handleDragHandleLeave = useCallback(() => {
+    const handleMouseLeave = useCallback(() => {
         if (!isDragging) {
             const win = getCurrentWindow();
             win.setIgnoreCursorEvents(true).catch(console.error);
@@ -87,7 +83,6 @@ const Overlay: React.FC = () => {
             const dy = e.screenY - dragRef.current.startY;
             const newX = dragRef.current.winX + dx;
             const newY = dragRef.current.winY + dy;
-
             const win = getCurrentWindow();
             try {
                 await win.setPosition(new LogicalPosition(newX, newY));
@@ -101,7 +96,6 @@ const Overlay: React.FC = () => {
             try {
                 const pos = await win.outerPosition();
                 localStorage.setItem(OVERLAY_POS_KEY, JSON.stringify({ x: pos.x, y: pos.y }));
-                // Re-enable click-through
                 await win.setIgnoreCursorEvents(true);
             } catch (_e) { /* ignore */ }
         };
@@ -115,32 +109,50 @@ const Overlay: React.FC = () => {
     }, [isDragging]);
 
     return (
-        <div className="w-full h-full flex flex-col items-start font-mono text-xs select-none bg-black/40 backdrop-blur-sm rounded-br-lg border-b border-r border-white/10 shadow-lg">
-            {/* Drag handle — this area is interactive */}
+        <div
+            className="w-full h-full flex items-center p-3 select-none bg-zinc-950/80 backdrop-blur-xl border border-white/5 rounded-xl shadow-2xl overflow-hidden relative group transition-all hover:border-white/10"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
+            {/* Drag Handle (Invisible but active on hover) */}
             <div
-                className="w-full h-3 cursor-grab active:cursor-grabbing flex items-center justify-center"
-                onMouseEnter={handleDragHandleEnter}
-                onMouseLeave={handleDragHandleLeave}
+                className="absolute inset-0 cursor-grab active:cursor-grabbing z-0"
                 onMouseDown={handleMouseDown}
-            >
-                <div className="w-8 h-[2px] bg-zinc-600 rounded-full" />
-            </div>
+            />
 
-            {/* Status content — click-through */}
-            <div className="px-2 pb-2 pointer-events-none">
-                <div className="flex items-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]' : 'bg-red-500'}`} />
-                    <span className={`font-bold ${isRunning ? 'text-green-400' : 'text-red-400'}`}>
-                        {isRunning ? 'ACTIVE' : 'READY'}
+            {/* Content (Z-indexed above drag handle) */}
+            <div className="relative z-10 flex items-center justify-between w-full pointer-events-none gap-4">
+
+                {/* Status Indicator */}
+                <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isRunning ? 'bg-indigo-500 shadow-lg shadow-indigo-500/20' : 'bg-zinc-800'}`}>
+                        {isRunning ? <Activity className="w-5 h-5 text-white animate-pulse" /> : <Power className="w-5 h-5 text-zinc-500" />}
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <span className={`text-xs font-bold tracking-wider ${isRunning ? 'text-white' : 'text-zinc-500'}`}>
+                                {isRunning ? 'ACTIVE' : 'READY'}
+                            </span>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-lg font-bold font-mono text-zinc-300 leading-none">{cps}</span>
+                            <span className="text-[9px] font-bold text-zinc-600 uppercase">CPS</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Info */}
+                <div className="flex flex-col items-end">
+                    <span className="text-[9px] font-bold text-zinc-600 bg-zinc-900/50 px-1.5 py-0.5 rounded border border-white/5">
+                        INS TO HIDE
                     </span>
                 </div>
-                <div className="mt-1 text-zinc-300">
-                    <span className="text-zinc-500">CPS:</span> {cps}
-                </div>
-                <div className="text-[9px] text-zinc-600 mt-0.5">
-                    [INS] MENU
-                </div>
             </div>
+
+            {/* Decorative Glow */}
+            {isRunning && (
+                <div className="absolute top-[-50%] left-[-20%] w-[100px] h-[100px] bg-indigo-500/20 rounded-full blur-2xl pointer-events-none animate-pulse" />
+            )}
         </div>
     );
 };

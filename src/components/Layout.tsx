@@ -1,11 +1,9 @@
-import { ReactNode } from "react";
-import Sidebar from "./Sidebar";
+
+import Sidebar, { Page } from "./Sidebar";
 import { Dispatch, SetStateAction } from "react";
 
-type Page = "clicker" | "macro" | "settings";
-
 interface LayoutProps {
-    children: ReactNode;
+    children: React.ReactNode;
     activePage: Page;
     setPage: Dispatch<SetStateAction<Page>>;
 }
