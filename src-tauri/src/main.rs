@@ -376,6 +376,7 @@ const VK_TAB: u16 = 0x09;
 const VK_Q: u16   = 0x51;
 const VK_S: u16   = 0x53;
 const VK_6: u16   = 0x36;
+const VK_1: u16   = 0x31;
 
 /// Part 1: Safe Pocket → Quick Use
 fn execute_macro_part1(config: &MacroConfig) {
@@ -430,17 +431,17 @@ fn execute_macro_part2(config: &MacroConfig) {
 
     println!("Macro Part 2: executing");
 
-    // 1. Hold S
-    send_key_down(VK_S);
-    thread::sleep(Duration::from_millis(50));
+    // 1. Press 1
+    press_key(VK_1);
+    thread::sleep(delay);
 
     // 2. Press dodge-roll key
     press_dodge(&config.dodge_key);
-    thread::sleep(delay);
+    thread::sleep(delay.max(Duration::from_millis(150))); // Ensure dodge animation starts
 
     // 3. Open backpack
     press_key(VK_TAB);
-    thread::sleep(delay);
+    thread::sleep(delay.max(Duration::from_millis(100))); // Ensure backpack is open
 
     // 4. Drag item from Quick Use to Safe Pocket
     drag_mouse(qu, sp);
@@ -448,10 +449,6 @@ fn execute_macro_part2(config: &MacroConfig) {
 
     // 5. Close backpack
     press_key(VK_TAB);
-    thread::sleep(delay);
-
-    // 6. Release S
-    send_key_up(VK_S);
 
     println!("Macro Part 2: done");
 }
